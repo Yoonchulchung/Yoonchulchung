@@ -7,13 +7,8 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-    } else {
-      router.push('/dashboard');
-    }
+    // Authentication disabled - redirect directly to dashboard
+    router.push('/dashboard');
   }, [router]);
 
   return (

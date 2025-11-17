@@ -1,7 +1,19 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# Install build dependencies for native modules and Prisma
+# - openssl: Required by Prisma query engine
+# - python3, make, g++: Required for building native modules (hnswlib-node)
+# - ca-certificates: For HTTPS connections
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -19,10 +31,27 @@ RUN npx prisma generate
 # Build application
 RUN npm run build
 
+# Verify build output exists
+RUN ls -la dist/ && \
+    test -f dist/main.js && \
+    echo "Build successful: dist/main.js exists"
+
 # Production stage
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
+
+# Install runtime dependencies for Prisma and native modules
+# - openssl: Required by Prisma query engine
+# - ca-certificates: For HTTPS connections
+# - python3, make, g++: Required by native modules like hnswlib-node at runtime
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -34,6 +63,11 @@ RUN npm ci --only=production
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Verify copied files exist
+RUN ls -la dist/ && \
+    test -f dist/main.js && \
+    echo "Production stage: dist/main.js exists"
 
 # Expose port
 EXPOSE 3001

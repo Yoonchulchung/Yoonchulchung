@@ -18,7 +18,13 @@ export default function DashboardPage() {
       const userData = await apiClient.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      router.push('/login');
+      // Authentication disabled - use default user for development
+      console.log('Using default user (auth disabled)');
+      setUser({
+        email: 'dev@portfolio.local',
+        username: 'Developer',
+        role: 'ADMIN'
+      });
     } finally {
       setLoading(false);
     }
