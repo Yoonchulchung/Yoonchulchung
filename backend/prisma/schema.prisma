@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Table - 외부 접근 관리를 위한 사용자 테이블
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  username  String   @unique
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+// Project Table - 프로젝트 설명을 위한 테이블
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  content     String   @db.Text
+  imageUrl    String?
+  demoUrl     String?
+  githubUrl   String?
+  tags        String[]
+  startDate   DateTime
+  endDate     DateTime?
+  isPublished Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("projects")
+}
+
+// Portfolio Table - 전체적인 포트폴리오 설명을 위한 테이블
+model Portfolio {
+  id          String   @id @default(uuid())
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  content     String   @db.Text
+  avatarUrl   String?
+  resumeUrl   String?
+  email       String?
+  github      String?
+  linkedin    String?
+  website     String?
+  skills      String[]
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("portfolios")
+}
