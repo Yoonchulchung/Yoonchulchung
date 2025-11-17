@@ -149,7 +149,7 @@ class ApiClient {
   }
 
   async getProject(id: string) {
-    const response = await this.client.get(\`/projects/\${id}\`);
+    const response = await this.client.get(`/projects/${id}`);
     return response.data;
   }
 
@@ -159,12 +159,12 @@ class ApiClient {
   }
 
   async updateProject(id: string, data: any) {
-    const response = await this.client.put(\`/projects/\${id}\`, data);
+    const response = await this.client.put(`/projects/${id}`, data);
     return response.data;
   }
 
   async deleteProject(id: string) {
-    await this.client.delete(\`/projects/\${id}\`);
+    await this.client.delete(`/projects/${id}`);
   }
 
   async getPortfolios(published?: boolean) {
@@ -179,7 +179,7 @@ class ApiClient {
   }
 
   async getPortfolio(id: string) {
-    const response = await this.client.get(\`/portfolios/\${id}\`);
+    const response = await this.client.get(`/portfolios/${id}`);
     return response.data;
   }
 
@@ -189,12 +189,33 @@ class ApiClient {
   }
 
   async updatePortfolio(id: string, data: any) {
-    const response = await this.client.put(\`/portfolios/\${id}\`, data);
+    const response = await this.client.put(`/portfolios/${id}`, data);
     return response.data;
   }
 
   async deletePortfolio(id: string) {
-    await this.client.delete(\`/portfolios/\${id}\`);
+    await this.client.delete(`/portfolios/${id}`);
+  }
+
+  // Generic HTTP methods for use by other API modules
+  async get(url: string, config?: AxiosRequestConfig) {
+    return this.client.get(url, config);
+  }
+
+  async post(url: string, data?: any, config?: AxiosRequestConfig) {
+    return this.client.post(url, data, config);
+  }
+
+  async put(url: string, data?: any, config?: AxiosRequestConfig) {
+    return this.client.put(url, data, config);
+  }
+
+  async patch(url: string, data?: any, config?: AxiosRequestConfig) {
+    return this.client.patch(url, data, config);
+  }
+
+  async delete(url: string, config?: AxiosRequestConfig) {
+    return this.client.delete(url, config);
   }
 }
 
