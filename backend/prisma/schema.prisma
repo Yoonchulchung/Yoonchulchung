@@ -147,7 +147,8 @@ model Document {
   source      String?  // 문서 출처 (URL, 파일명 등)
   sourceType  String   @default("manual") // manual, upload, web, database
   metadata    Json?    // 추가 메타데이터
-  embedding   Float[]? // 벡터 임베딩 (나중에 pgvector로 변경 가능)
+  // Note: Embeddings are stored in MemoryVectorStore, not in DB
+  // For pgvector support in future, add: embedding Unsupported("vector")?
   isIndexed   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
