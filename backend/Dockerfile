@@ -22,6 +22,11 @@ RUN npx prisma generate
 # Build application
 RUN npm run build
 
+# Verify build output exists
+RUN ls -la dist/ && \
+    test -f dist/main.js && \
+    echo "Build successful: dist/main.js exists"
+
 # Production stage
 FROM node:20-alpine
 
@@ -40,6 +45,11 @@ RUN npm ci --only=production
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Verify copied files exist
+RUN ls -la dist/ && \
+    test -f dist/main.js && \
+    echo "Production stage: dist/main.js exists"
 
 # Expose port
 EXPOSE 3001
