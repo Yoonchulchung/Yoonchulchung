@@ -1,12 +1,19 @@
 # Build stage
-FROM node:20-alpine3.19 AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # Install build dependencies for native modules and Prisma
-# - openssl1.1-compat: Required by Prisma query engine
+# - openssl: Required by Prisma query engine
 # - python3, make, g++: Required for building native modules (hnswlib-node)
-RUN apk add --no-cache openssl1.1-compat python3 make g++
+# - ca-certificates: For HTTPS connections
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -30,14 +37,21 @@ RUN ls -la dist/ && \
     echo "Build successful: dist/main.js exists"
 
 # Production stage
-FROM node:20-alpine3.19
+FROM node:20-slim
 
 WORKDIR /app
 
 # Install runtime dependencies for Prisma and native modules
-# - openssl1.1-compat: Required by Prisma query engine (libquery_engine-linux-musl.so.node)
-# - python3, make, g++: Required by native modules like hnswlib-node
-RUN apk add --no-cache openssl1.1-compat python3 make g++
+# - openssl: Required by Prisma query engine
+# - ca-certificates: For HTTPS connections
+# - python3, make, g++: Required by native modules like hnswlib-node at runtime
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
