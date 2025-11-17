@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.19 AS builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN ls -la dist/ && \
     echo "Build successful: dist/main.js exists"
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-alpine3.19
 
 WORKDIR /app
 
