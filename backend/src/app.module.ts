@@ -34,10 +34,12 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     AIModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
+    // NOTE: JWT Authentication disabled for development
+    // Uncomment to enable authentication:
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard,
+    // },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
