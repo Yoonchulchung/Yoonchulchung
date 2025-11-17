@@ -4,10 +4,10 @@ import { RedisService } from '../../config/redis.service';
 import { LLMProviderService, LLMConfig } from './llm-provider.service';
 import { RAGService } from './rag.service';
 import { AIProvider, MessageRole } from '@prisma/client';
-import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages/index.js';
-import { BufferMemory } from 'langchain/memory';
-import { ConversationChain } from 'langchain/chains';
-import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts/index.js';
+import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
+import { BufferMemory } from '@langchain/classic/memory';
+import { ConversationChain } from '@langchain/classic/chains';
+import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import * as crypto from 'crypto';
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-in-production';

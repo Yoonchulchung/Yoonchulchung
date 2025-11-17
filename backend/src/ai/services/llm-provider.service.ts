@@ -3,7 +3,7 @@ import { AIProvider } from '@prisma/client';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { BaseChatModel } from '@langchain/core/language_models/chat_models.js';
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 export interface LLMConfig {
   provider: AIProvider;
