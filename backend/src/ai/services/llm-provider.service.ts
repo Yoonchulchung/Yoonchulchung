@@ -1,17 +1,9 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { AIProvider } from '@prisma/client';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-
-// Enum type (will be available after Prisma generate)
-enum AIProvider {
-  OPENAI = 'OPENAI',
-  ANTHROPIC = 'ANTHROPIC',
-  GOOGLE = 'GOOGLE',
-  COHERE = 'COHERE',
-  HUGGINGFACE = 'HUGGINGFACE',
-}
+import { BaseChatModel } from '@langchain/core/language_models/chat_models.js';
 
 export interface LLMConfig {
   provider: AIProvider;
@@ -21,35 +13,19 @@ export interface LLMConfig {
   maxTokens?: number;
 }
 
-/**
- * LLM Provider Service
- * 다양한 AI 모델 프로바이더를 통합 관리하는 서비스
- */
 @Injectable()
 export class LLMProviderService {
   private readonly logger = new Logger(LLMProviderService.name);
 
-  /**
-   * 프로바이더에 맞는 Chat Model 인스턴스 생성
-   */
   createChatModel(config: LLMConfig): BaseChatModel {
     try {
       switch (config.provider) {
         case AIProvider.OPENAI:
           return this.createOpenAIModel(config);
-
         case AIProvider.ANTHROPIC:
           return this.createAnthropicModel(config);
-
         case AIProvider.GOOGLE:
           return this.createGoogleModel(config);
-
-        case AIProvider.COHERE:
-          throw new BadRequestException('Cohere provider is not yet implemented');
-
-        case AIProvider.HUGGINGFACE:
-          throw new BadRequestException('HuggingFace provider is not yet implemented');
-
         default:
           throw new BadRequestException(`Unsupported provider: ${config.provider}`);
       }
@@ -59,9 +35,6 @@ export class LLMProviderService {
     }
   }
 
-  /**
-   * OpenAI Chat Model 생성
-   */
   private createOpenAIModel(config: LLMConfig): ChatOpenAI {
     return new ChatOpenAI({
       modelName: config.model || 'gpt-4-turbo-preview',
@@ -72,9 +45,6 @@ export class LLMProviderService {
     });
   }
 
-  /**
-   * Anthropic (Claude) Chat Model 생성
-   */
   private createAnthropicModel(config: LLMConfig): ChatAnthropic {
     return new ChatAnthropic({
       modelName: config.model || 'claude-3-5-sonnet-20241022',
@@ -85,9 +55,6 @@ export class LLMProviderService {
     });
   }
 
-  /**
-   * Google (Gemini) Chat Model 생성
-   */
   private createGoogleModel(config: LLMConfig): ChatGoogleGenerativeAI {
     return new ChatGoogleGenerativeAI({
       model: config.model || 'gemini-pro',
@@ -98,51 +65,19 @@ export class LLMProviderService {
     });
   }
 
-  /**
-   * 프로바이더별 사용 가능한 모델 목록
-   */
   getAvailableModels(provider: AIProvider): string[] {
     switch (provider) {
       case AIProvider.OPENAI:
-        return [
-          'gpt-4-turbo-preview',
-          'gpt-4',
-          'gpt-4-32k',
-          'gpt-3.5-turbo',
-          'gpt-3.5-turbo-16k',
-        ];
-
+        return ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'];
       case AIProvider.ANTHROPIC:
-        return [
-          'claude-3-5-sonnet-20241022',
-          'claude-3-opus-20240229',
-          'claude-3-sonnet-20240229',
-          'claude-3-haiku-20240307',
-          'claude-2.1',
-          'claude-2.0',
-        ];
-
+        return ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'];
       case AIProvider.GOOGLE:
-        return [
-          'gemini-pro',
-          'gemini-pro-vision',
-          'gemini-ultra',
-        ];
-
-      case AIProvider.COHERE:
-        return ['command', 'command-light', 'command-nightly'];
-
-      case AIProvider.HUGGINGFACE:
-        return ['meta-llama/Llama-2-70b-chat-hf', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
-
+        return ['gemini-pro'];
       default:
         return [];
     }
   }
 
-  /**
-   * API 키 유효성 검증
-   */
   async validateApiKey(provider: AIProvider, apiKey: string): Promise<boolean> {
     try {
       const model = this.createChatModel({
@@ -152,8 +87,6 @@ export class LLMProviderService {
         temperature: 0,
         maxTokens: 10,
       });
-
-      // 간단한 메시지로 API 키 테스트
       await model.invoke('Test');
       return true;
     } catch (error) {

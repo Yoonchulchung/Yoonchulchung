@@ -1,13 +1,5 @@
 import { IsString, IsOptional, IsEnum, IsNumber, IsBoolean, Min, Max } from 'class-validator';
-
-// Enum type (will be available after Prisma generate)
-enum AIProvider {
-  OPENAI = 'OPENAI',
-  ANTHROPIC = 'ANTHROPIC',
-  GOOGLE = 'GOOGLE',
-  COHERE = 'COHERE',
-  HUGGINGFACE = 'HUGGINGFACE',
-}
+import { AIProvider } from '@prisma/client';
 
 export class CreateChatSessionDto {
   @IsString()

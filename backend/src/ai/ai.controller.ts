@@ -168,7 +168,8 @@ export class AIController {
   @Post('rag/reindex')
   async reindex(@Request() req) {
     // OpenAI API 키 가져오기 (RAG용)
-    const apiKey = await this.chatService['getApiKey'](req.user.userId, 'OPENAI');
+    const { AIProvider } = await import('@prisma/client');
+    const apiKey = await this.chatService['getApiKey'](req.user.userId, AIProvider.OPENAI);
     await this.ragService.reindex(apiKey);
 
     return {
