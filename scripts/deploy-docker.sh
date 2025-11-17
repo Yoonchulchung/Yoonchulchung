@@ -66,8 +66,14 @@ build_images() {
 
 start_services() {
     log_info "Starting services..."
-    docker compose up -d
-    log_info "Services started"
+    if docker compose up -d; then
+        log_info "Services started"
+    else
+        log_error "Failed to start services"
+        log_info "Showing logs for debugging..."
+        docker compose logs --tail=50
+        exit 1
+    fi
 }
 
 run_migrations() {
@@ -86,21 +92,48 @@ run_migrations() {
 health_check() {
     log_info "Performing health check..."
 
-    # Wait a bit for services to stabilize
-    sleep 5
+    # Wait for services to stabilize (health checks have 60s start_period)
+    log_info "Waiting for services to start up (this may take up to 60 seconds)..."
+    sleep 15
 
-    # Check backend health
-    if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
-        log_info "Backend health check passed ✓"
-    else
-        log_warn "Backend health check failed"
-    fi
+    # Check backend health with retries
+    log_info "Checking backend health..."
+    backend_healthy=false
+    for i in {1..6}; do
+        if curl -f http://localhost:3001/api/health/live > /dev/null 2>&1; then
+            log_info "Backend health check passed ✓"
+            backend_healthy=true
+            break
+        else
+            if [ $i -lt 6 ]; then
+                log_warn "Backend not ready yet, retrying in 10 seconds... (attempt $i/6)"
+                sleep 10
+            else
+                log_error "Backend health check failed after 6 attempts"
+                log_info "Running troubleshoot to show logs..."
+                troubleshoot
+            fi
+        fi
+    done
 
-    # Check frontend
-    if curl -f http://localhost:3000 > /dev/null 2>&1; then
-        log_info "Frontend health check passed ✓"
-    else
-        log_warn "Frontend health check failed"
+    # Check frontend health with retries
+    if [ "$backend_healthy" = true ]; then
+        log_info "Checking frontend health..."
+        frontend_healthy=false
+        for i in {1..3}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+                log_info "Frontend health check passed ✓"
+                frontend_healthy=true
+                break
+            else
+                if [ $i -lt 3 ]; then
+                    log_warn "Frontend not ready yet, retrying in 10 seconds... (attempt $i/3)"
+                    sleep 10
+                else
+                    log_warn "Frontend health check failed - may still be starting"
+                fi
+            fi
+        done
     fi
 
     log_info ""
@@ -108,11 +141,38 @@ health_check() {
     log_info "  Frontend: http://localhost:3000"
     log_info "  Backend API: http://localhost:3001/api"
     log_info "  Health Check: http://localhost:3001/api/health"
+    log_info ""
+    log_info "To view logs: ./scripts/deploy-docker.sh logs"
+    log_info "To troubleshoot: ./scripts/deploy-docker.sh troubleshoot"
 }
 
 show_logs() {
     log_info "Showing service logs (Ctrl+C to exit)..."
     docker compose logs -f
+}
+
+troubleshoot() {
+    log_info "=== Troubleshooting Information ==="
+
+    log_info "\n1. Service Status:"
+    docker compose ps
+
+    log_info "\n2. Backend Logs (last 30 lines):"
+    docker compose logs backend --tail=30
+
+    log_info "\n3. Frontend Logs (last 30 lines):"
+    docker compose logs frontend --tail=30
+
+    log_info "\n4. Database Logs (last 20 lines):"
+    docker compose logs postgres --tail=20
+
+    log_info "\n5. Redis Logs (last 20 lines):"
+    docker compose logs redis --tail=20
+
+    log_info "\n6. Container Health:"
+    docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}"
+
+    log_info "\nFor more details, run: ./scripts/deploy-docker.sh logs"
 }
 
 stop_services() {
@@ -172,20 +232,24 @@ main() {
             log_info "Service status:"
             docker compose ps
             ;;
+        troubleshoot|debug)
+            troubleshoot
+            ;;
         destroy)
             destroy_all
             ;;
         *)
-            echo "Usage: $0 {deploy|rebuild|restart|stop|logs|status|destroy}"
+            echo "Usage: $0 {deploy|rebuild|restart|stop|logs|status|troubleshoot|destroy}"
             echo ""
             echo "Commands:"
-            echo "  deploy   - Build and deploy all services (default)"
-            echo "  rebuild  - Rebuild images and redeploy"
-            echo "  restart  - Restart all services"
-            echo "  stop     - Stop all services"
-            echo "  logs     - Show service logs"
-            echo "  status   - Show service status"
-            echo "  destroy  - Remove all services and data"
+            echo "  deploy       - Build and deploy all services (default)"
+            echo "  rebuild      - Rebuild images and redeploy"
+            echo "  restart      - Restart all services"
+            echo "  stop         - Stop all services"
+            echo "  logs         - Show service logs"
+            echo "  status       - Show service status"
+            echo "  troubleshoot - Show detailed troubleshooting information"
+            echo "  destroy      - Remove all services and data"
             exit 1
             ;;
     esac
