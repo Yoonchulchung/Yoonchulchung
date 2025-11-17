@@ -87,6 +87,12 @@ run_migrations() {
         docker compose exec backend npm run prisma:migrate deploy
     }
     log_info "Database migrations completed"
+
+    log_info "Seeding database with initial data..."
+    docker compose exec backend npm run prisma:seed || {
+        log_warn "Seeding failed or already completed"
+    }
+    log_info "Database setup completed"
 }
 
 health_check() {
