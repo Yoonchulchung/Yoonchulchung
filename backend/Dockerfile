@@ -3,8 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies for native modules (hnswlib-node requires Python and build tools)
-RUN apk add --no-cache python3 make g++
+# Install build dependencies for native modules and Prisma
+# - openssl1.1-compat: Required by Prisma query engine
+# - python3, make, g++: Required for building native modules (hnswlib-node)
+RUN apk add --no-cache openssl1.1-compat python3 make g++
 
 # Copy package files
 COPY package*.json ./
@@ -32,8 +34,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install build dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# Install runtime dependencies for Prisma and native modules
+# - openssl1.1-compat: Required by Prisma query engine (libquery_engine-linux-musl.so.node)
+# - python3, make, g++: Required by native modules like hnswlib-node
+RUN apk add --no-cache openssl1.1-compat python3 make g++
 
 # Copy package files
 COPY package*.json ./
