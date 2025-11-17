@@ -3,12 +3,27 @@ import { PrismaService } from '../../config/prisma.service';
 import { RedisService } from '../../config/redis.service';
 import { LLMProviderService, LLMConfig } from './llm-provider.service';
 import { RAGService } from './rag.service';
-import { AIProvider, MessageRole } from '@prisma/client';
 import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
 import { BufferMemory } from 'langchain/memory';
 import { ConversationChain } from 'langchain/chains';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import * as crypto from 'crypto';
+
+// Enum types (will be available after Prisma generate)
+enum AIProvider {
+  OPENAI = 'OPENAI',
+  ANTHROPIC = 'ANTHROPIC',
+  GOOGLE = 'GOOGLE',
+  COHERE = 'COHERE',
+  HUGGINGFACE = 'HUGGINGFACE',
+}
+
+enum MessageRole {
+  USER = 'USER',
+  ASSISTANT = 'ASSISTANT',
+  SYSTEM = 'SYSTEM',
+  FUNCTION = 'FUNCTION',
+}
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-in-production';
 const ENCRYPTION_ALGORITHM = 'aes-256-cbc';

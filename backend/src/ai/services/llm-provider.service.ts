@@ -1,9 +1,17 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { AIProvider } from '@prisma/client';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+
+// Enum type (will be available after Prisma generate)
+enum AIProvider {
+  OPENAI = 'OPENAI',
+  ANTHROPIC = 'ANTHROPIC',
+  GOOGLE = 'GOOGLE',
+  COHERE = 'COHERE',
+  HUGGINGFACE = 'HUGGINGFACE',
+}
 
 export interface LLMConfig {
   provider: AIProvider;
@@ -82,7 +90,7 @@ export class LLMProviderService {
    */
   private createGoogleModel(config: LLMConfig): ChatGoogleGenerativeAI {
     return new ChatGoogleGenerativeAI({
-      modelName: config.model || 'gemini-pro',
+      model: config.model || 'gemini-pro',
       apiKey: config.apiKey,
       temperature: config.temperature ?? 0.7,
       maxOutputTokens: config.maxTokens,

@@ -9,7 +9,7 @@ import {
   Request,
   Sse,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ChatService } from './services/chat.service';
 import { RAGService } from './services/rag.service';
 import { LLMProviderService } from './services/llm-provider.service';

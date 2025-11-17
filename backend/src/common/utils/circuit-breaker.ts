@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common';
  * Prevents cascading failures by stopping requests to failing services
  */
 
-enum CircuitState {
+export enum CircuitState {
   CLOSED = 'CLOSED', // Normal operation
   OPEN = 'OPEN', // Failing, reject requests
   HALF_OPEN = 'HALF_OPEN', // Testing if service recovered
