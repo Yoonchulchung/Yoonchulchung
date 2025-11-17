@@ -24,11 +24,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     await this.connectWithRetry();
-
-    // Handle disconnections
-    this.$on('beforeExit' as never, async () => {
-      this.logger.warn('Prisma client is disconnecting...');
-    });
+    // Note: beforeExit hook removed - not supported in Prisma 5.x
+    // Cleanup is handled by onModuleDestroy() lifecycle hook
   }
 
   async onModuleDestroy() {
