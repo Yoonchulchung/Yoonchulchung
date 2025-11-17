@@ -1,9 +1,35 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+interface RetryConfig {
+  retries?: number;
+  retryDelay?: number;
+  retryCondition?: (error: AxiosError) => boolean;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public statusCode: number,
+    public errorCode: string,
+    message: string,
+    public details?: any,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 class ApiClient {
   private client: AxiosInstance;
+  private retryConfig: RetryConfig = {
+    retries: 3,
+    retryDelay: 1000,
+    retryCondition: (error) => {
+      // Retry on network errors or 5xx server errors
+      return !error.response || (error.response.status >= 500 && error.response.status < 600);
+    },
+  };
 
   constructor() {
     this.client = axios.create({
@@ -11,13 +37,14 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 30000, // 30 seconds
     });
 
     this.client.interceptors.request.use(
       (config) => {
         const token = this.getToken();
         if (token) {
-          config.headers.Authorization = \`Bearer \${token}\`;
+          config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
@@ -25,17 +52,58 @@ class ApiClient {
     );
 
     this.client.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => {
+      (response) => response.data, // Return data.data directly
+      async (error: AxiosError) => {
+        const originalRequest: any = error.config;
+
+        // Handle retry logic
+        if (
+          this.retryConfig.retryCondition &&
+          this.retryConfig.retryCondition(error) &&
+          originalRequest &&
+          !originalRequest._retry &&
+          (!originalRequest._retryCount || originalRequest._retryCount < (this.retryConfig.retries || 0))
+        ) {
+          originalRequest._retry = true;
+          originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
+
+          await this.delay(this.retryConfig.retryDelay || 1000);
+          return this.client(originalRequest);
+        }
+
+        // Handle 401 Unauthorized
         if (error.response?.status === 401) {
           this.clearToken();
           if (typeof window !== 'undefined') {
             window.location.href = '/login';
           }
         }
-        return Promise.reject(error);
+
+        // Transform error to ApiError
+        const apiError = this.transformError(error);
+        return Promise.reject(apiError);
       }
     );
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private transformError(error: AxiosError): ApiError {
+    if (error.response) {
+      const data: any = error.response.data;
+      return new ApiError(
+        error.response.status,
+        data?.errorCode || 'UNKNOWN_ERROR',
+        data?.message || error.message,
+        data?.details,
+      );
+    } else if (error.request) {
+      return new ApiError(0, 'NETWORK_ERROR', 'Network error occurred');
+    } else {
+      return new ApiError(0, 'UNKNOWN_ERROR', error.message);
+    }
   }
 
   private getToken(): string | null {
