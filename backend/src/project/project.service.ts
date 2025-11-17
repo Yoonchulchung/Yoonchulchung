@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ResourceNotFoundException } from '../common/exceptions/custom-exceptions';
 
 @Injectable()
 export class ProjectService {
@@ -25,7 +26,7 @@ export class ProjectService {
   async findOne(id: string) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new ResourceNotFoundException('Project', id);
     }
     return project;
   }
@@ -43,7 +44,7 @@ export class ProjectService {
   async update(id: string, updateProjectDto: UpdateProjectDto) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new ResourceNotFoundException('Project', id);
     }
 
     const data: any = { ...updateProjectDto };
@@ -56,7 +57,7 @@ export class ProjectService {
   async remove(id: string) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new ResourceNotFoundException('Project', id);
     }
     await this.prisma.project.delete({ where: { id } });
   }

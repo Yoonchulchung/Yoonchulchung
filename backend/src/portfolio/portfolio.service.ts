@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
+import { ResourceNotFoundException } from '../common/exceptions/custom-exceptions';
 
 @Injectable()
 export class PortfolioService {
@@ -20,7 +21,7 @@ export class PortfolioService {
   async findOne(id: string) {
     const portfolio = await this.prisma.portfolio.findUnique({ where: { id } });
     if (!portfolio) {
-      throw new NotFoundException('Portfolio not found');
+      throw new ResourceNotFoundException('Portfolio', id);
     }
     return portfolio;
   }
@@ -30,7 +31,7 @@ export class PortfolioService {
       where: { isPublished: true },
     });
     if (!portfolio) {
-      throw new NotFoundException('No published portfolio found');
+      throw new ResourceNotFoundException('Portfolio');
     }
     return portfolio;
   }
@@ -38,7 +39,7 @@ export class PortfolioService {
   async update(id: string, updatePortfolioDto: UpdatePortfolioDto) {
     const portfolio = await this.prisma.portfolio.findUnique({ where: { id } });
     if (!portfolio) {
-      throw new NotFoundException('Portfolio not found');
+      throw new ResourceNotFoundException('Portfolio', id);
     }
     return this.prisma.portfolio.update({ where: { id }, data: updatePortfolioDto });
   }
@@ -46,7 +47,7 @@ export class PortfolioService {
   async remove(id: string) {
     const portfolio = await this.prisma.portfolio.findUnique({ where: { id } });
     if (!portfolio) {
-      throw new NotFoundException('Portfolio not found');
+      throw new ResourceNotFoundException('Portfolio', id);
     }
     await this.prisma.portfolio.delete({ where: { id } });
   }
