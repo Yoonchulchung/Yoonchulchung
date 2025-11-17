@@ -12,13 +12,17 @@ datasource db {
 
 // User Table - 외부 접근 관리를 위한 사용자 테이블
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  username  String   @unique
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  username     String        @unique
+  role         UserRole      @default(USER)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  apiKeys      ApiKey[]
+  chatSessions ChatSession[]
 
   @@map("users")
 }
@@ -67,4 +71,87 @@ model Portfolio {
   updatedAt   DateTime @updatedAt
 
   @@map("portfolios")
+}
+
+// ApiKey Table - AI 모델 API 키 저장 (암호화됨)
+model ApiKey {
+  id        String      @id @default(uuid())
+  userId    String
+  provider  AIProvider  // OpenAI, Anthropic, Google, etc.
+  apiKey    String      // 암호화되어 저장됨
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("api_keys")
+}
+
+enum AIProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  COHERE
+  HUGGINGFACE
+}
+
+// ChatSession Table - 채팅 세션
+model ChatSession {
+  id           String        @id @default(uuid())
+  userId       String
+  title        String        @default("New Chat")
+  model        String        @default("gpt-4")  // 사용 중인 AI 모델
+  provider     AIProvider    @default(OPENAI)
+  systemPrompt String?       @db.Text
+  temperature  Float         @default(0.7)
+  maxTokens    Int           @default(2000)
+  useRAG       Boolean       @default(false)     // RAG 사용 여부
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+// ChatMessage Table - 개별 채팅 메시지
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  role      MessageRole // user, assistant, system
+  content   String      @db.Text
+  metadata  Json?       // 추가 메타데이터 (토큰 수, 소요 시간 등)
+  createdAt DateTime    @default(now())
+
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("chat_messages")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  FUNCTION
+}
+
+// Document Table - RAG를 위한 문서 저장
+model Document {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  source      String?  // 문서 출처 (URL, 파일명 등)
+  sourceType  String   @default("manual") // manual, upload, web, database
+  metadata    Json?    // 추가 메타데이터
+  embedding   Float[]? // 벡터 임베딩 (나중에 pgvector로 변경 가능)
+  isIndexed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sourceType])
+  @@map("documents")
 }
